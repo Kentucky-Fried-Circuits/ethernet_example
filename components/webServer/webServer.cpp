@@ -80,8 +80,9 @@ const httpd_uri_t hostinfo_handler = {
  */
 esp_err_t chartData_get_handler(httpd_req_t *req)
 {
+    std::string chartString = getRecentData();
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
-    return httpd_resp_send(req, chartJumpStart_String, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req, chartString.c_str(), HTTPD_RESP_USE_STRLEN);
 }
 const httpd_uri_t chartData = {
     .uri = "/recent.json",

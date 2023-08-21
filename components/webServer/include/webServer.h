@@ -86,6 +86,8 @@ std::string getHistoryFiles();
 
 std::string getDaysStats();
 
+std::string getRecentData();
+
 void addToRecent(std::vector<float> liveData);
 
 #endif /* WEBSERVER_H */

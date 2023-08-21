@@ -221,6 +221,62 @@ std::string getDaysStats()
     return returnString;
 }
 
+cJSON *createRecentJSONObj(long long tempTime, float b_amp_in_out, float b_dc_watts, float b_state_of_charge)
+{
+    cJSON *JSON_Obj = NULL;
+    cJSON *data = NULL;
+
+    JSON_Obj = cJSON_CreateObject();
+    cJSON_AddNumberToObject(JSON_Obj, "time", tempTime);
+    cJSON_AddItemToObject(JSON_Obj, "data", data = cJSON_CreateObject());
+
+    cJSON_AddNumberToObject(data, "b_amph_in_out", b_amp_in_out);
+    cJSON_AddNumberToObject(data, "b_dc_watts", b_dc_watts);
+    cJSON_AddNumberToObject(data, "b_state_of_charge", b_state_of_charge);
+
+    return JSON_Obj;
+}
+
+/**
+ * This json string is used to kick start the plot on current Condition page.
+ */
+std::string getRecentData()
+{
+    if (histMap.empty())
+    {
+        ESP_LOGI(TAG_WEB, "Map is empty");
+        return "{\"recent\":[]}";
+    }
+    ESP_LOGI(TAG_WEB, "Map size is %d", histMap["b_dc_watts"].valueHolder.size());
+
+    char *JSONString = NULL;
+    std::string returnString;
+    cJSON *JSONObj = NULL;
+    cJSON *recent = NULL;
+    long long tempTime = 10000;
+    
+    JSONObj = cJSON_CreateObject();
+    cJSON_AddItemToObject(JSONObj, "recent", recent = cJSON_CreateArray());
+
+    for (int i = 0; i < histMap["b_dc_watts"].valueHolder.size(); i++)
+    {
+        cJSON_AddItemToArray(recent, createRecentJSONObj(tempTime,
+                                                         0, // We don't have b_amph_in_out since 24 hours data don't require it.
+                                                         histMap["b_dc_watts"].valueHolder[i],
+                                                         histMap["b_state_of_charge_clean"].valueHolder[i]));
+
+        tempTime += 10000;
+    }
+
+    JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
+    cJSON_Delete(JSONObj);
+
+    return returnString;
+}
+
 /**
  * Before the vector size hits max number 10, we count the basic avg = sum/size
  */
