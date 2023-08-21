@@ -35,7 +35,7 @@
 #define ERR_HTTP_ALLOC_MEM "Failed to allocate memory for instance"
 #define ERR_HTTP_TASK "Failed to launch server task"
 // Max length for file name. Our file should have format of yyyyMMDD.csv
-#define FILE_PATH_MAX 20
+#define FILE_PATH_MAX 25
 
 /* Max size of an individual file. Make sure this
  * value is same as that set in upload_script.html */

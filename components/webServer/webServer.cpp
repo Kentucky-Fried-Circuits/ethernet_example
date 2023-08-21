@@ -318,6 +318,7 @@ static esp_err_t download_handler(httpd_req_t *req)
 
     const char *filename = get_path_from_uri(filepath, server_data->base_path,
                                              req->uri, sizeof(filepath));
+    ESP_LOGI(TAG_WEB, "base path is %s, uri is %s, size is %d", server_data->base_path, req->uri, sizeof(filepath));
     if (!filename)
     {
         ESP_LOGE(TAG_WEB, "Filename is too long");
@@ -379,13 +380,13 @@ static esp_err_t download_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-static const httpd_uri_t downloadFile = {
-    .uri = "/history/*",
+/* URI handler for getting uploaded files */
+httpd_uri_t downloadFile = {
+    .uri = "/download/*", // Match all URIs of type /path/to/file
     .method = HTTP_GET,
     .handler = download_handler,
-    /* Let's pass response string in user
-     * context to demonstrate it's usage */
-    .user_ctx = (void *)""};
+    .user_ctx = (void *)"" // Pass server data as context
+};
 
 /* Handler to delete a file from the server */
 static esp_err_t delete_post_handler(httpd_req_t *req)
@@ -427,9 +428,6 @@ static esp_err_t delete_post_handler(httpd_req_t *req)
     /* Redirect onto root to see the updated file list */
     httpd_resp_set_status(req, "303 See Other");
     httpd_resp_set_hdr(req, "Location", "/");
-#ifdef CONFIG_EXAMPLE_HTTPD_CONN_CLOSE_HEADER
-    httpd_resp_set_hdr(req, "Connection", "close");
-#endif
     httpd_resp_sendstr(req, "File deleted successfully");
     return ESP_OK;
 }
@@ -438,7 +436,7 @@ httpd_uri_t file_delete = {
     .uri = "/delete/*", // Match all URIs of type /delete/path/to/file
     .method = HTTP_POST,
     .handler = delete_post_handler,
-    .user_ctx = server_data // Pass server data as context
+    .user_ctx = (void *)"" // Pass server data as context
 };
 
 /* NOTE: Handlers under this line are for retrieving webpages */
@@ -494,9 +492,12 @@ httpd_handle_t start_webserver()
 
     server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 20;
+    config.max_uri_handlers = 21;
     config.lru_purge_enable = true;
     config.stack_size = 20480;
+
+    /*This option allows the usage of wildcard*/
+    config.uri_match_fn = httpd_uri_match_wildcard;
 
     if (httpd_start(&server, &config) == ESP_OK)
     {
