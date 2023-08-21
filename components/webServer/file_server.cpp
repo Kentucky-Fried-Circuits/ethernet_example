@@ -11,34 +11,29 @@
 
 /* Copies the full path into destination buffer and returns
  * pointer to path (skipping the preceding base path) */
-const char *get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
+const char *get_path_from_uri(char *uri, char *search, char *dest)
 {
-    const size_t base_pathlen = strlen(base_path);
-    size_t pathlen = strlen(uri);
+    const char *finalString;
+    std::string csvFile;
+    std::string baseURI(uri);
+    std::string searchingString(search);
+    std::string replace(MOUNT_POINT);
+    size_t pos = baseURI.find(search);
 
-    const char *quest = strchr(uri, '?');
-    if (quest)
-    {
-        pathlen = MIN(pathlen, quest - uri);
-    }
-    const char *hash = strchr(uri, '#');
-    if (hash)
-    {
-        pathlen = MIN(pathlen, hash - uri);
-    }
+    csvFile = uri.substr(pos + searchingString.length());
+    replace.append("/").append(csvFile);
 
-    if (base_pathlen + pathlen + 1 > destsize)
-    {
-        /* Full path string won't fit into destination buffer */
-        return NULL;
-    }
+    dest = replace.c_str();
+    finalString = csvFile.c_str();
+    return finalString;
+}
 
-    /* Construct full path (base + path) */
-    strcpy(dest, base_path);
-    strlcpy(dest + base_pathlen, uri, pathlen + 1);
+/* Construct full path (base + path) */
+strcpy(dest, base_path);
+strlcpy(dest + base_pathlen, uri, pathlen + 1);
 
-    /* Return pointer to path, skipping the base */
-    return dest + base_pathlen;
+/* Return pointer to path, skipping the base */
+return dest + base_pathlen;
 }
 
 struct file_server_data *initFileServer()

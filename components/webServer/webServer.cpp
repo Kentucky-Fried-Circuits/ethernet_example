@@ -316,8 +316,7 @@ static esp_err_t download_handler(httpd_req_t *req)
     FILE *fd = NULL;
     struct stat file_stat;
 
-    const char *filename = get_path_from_uri(filepath, server_data->base_path,
-                                             req->uri, sizeof(filepath));
+    const char *filename = get_path_from_uri(req->uri, DOWNLOAD_URI, filepath);
     ESP_LOGI(TAG_WEB, "base path is %s, uri is %s, size is %d", server_data->base_path, req->uri, sizeof(filepath));
     if (!filename)
     {
@@ -396,8 +395,8 @@ static esp_err_t delete_post_handler(httpd_req_t *req)
 
     /* Skip leading "/delete" from URI to get filename */
     /* Note sizeof() counts NULL termination hence the -1 */
-    const char *filename = get_path_from_uri(filepath, server_data->base_path,
-                                             req->uri + sizeof("/delete") - 1, sizeof(filepath));
+    const char *filename = get_path_from_uri(req->uri, DELETE_URI, filepath);
+
     if (!filename)
     {
         /* Respond with 500 Internal Server Error */

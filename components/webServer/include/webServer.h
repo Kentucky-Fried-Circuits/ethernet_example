@@ -1,6 +1,6 @@
 /**
- * 08/17/2023 - Ruizhe He, since 
-*/
+ * 08/17/2023 - Ruizhe He, since
+ */
 #pragma once
 
 #ifndef WEBSERVER_H
@@ -34,6 +34,9 @@
 #define ERR_INVALID_ARG "Null argument(s)"
 #define ERR_HTTP_ALLOC_MEM "Failed to allocate memory for instance"
 #define ERR_HTTP_TASK "Failed to launch server task"
+
+#define DOWNLOAD_URI "/download/"
+#define DELETE_URI "/delete/"
 // Max length for file name. Our file should have format of yyyyMMDD.csv
 #define FILE_PATH_MAX 25
 
@@ -57,7 +60,7 @@ struct file_server_data
 };
 
 // NOTE: file_server.c
-const char *get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize);
+const char *get_path_from_uri(char *uri, char *search, char *dest)
 
 struct file_server_data *initFileServer();
 
