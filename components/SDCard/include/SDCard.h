@@ -16,11 +16,14 @@
 const char *const TAG_SD = "SD_Card";
 static sdmmc_card_t *card;
 static bool SDCARDMOUNTED = false;
+
+/*functions*/
 esp_err_t initi_sd_card(void);
 esp_err_t unmount_sd_card(void);
 int logStringToFile(const char *formattedString, char *fileName);
 bool isMounted(void);
 bool SD_getFreeSpace(uint32_t *tot, uint32_t *free);
+void deleteFile(char *filePath);
 int hasFile(char *fileName);
 
 #endif // SDCARD_H

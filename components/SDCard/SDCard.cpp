@@ -4,8 +4,6 @@
  */
 #include "SDCard.h"
 
-
-
 /**
  * This function will mount the SD card
  */
@@ -106,11 +104,23 @@ bool SD_getFreeSpace(uint32_t *tot, uint32_t *free)
     return false;
 }
 
+void deleteFile(char *filePath)
+{
+    unlink(filePath);
+}
+
 int hasFile(char *fileName)
 {
     struct stat st;
     std::string filePath;
-    filePath.append(MOUNT_POINT).append("/").append(fileName);
+    filePath.append(fileName);
+
+    if (filePath.find(MOUNT_POINT) == std::string::npos)
+    {
+        std::string temp;
+        temp.append(MOUNT_POINT).append("/");
+        filePath.insert(0, temp);
+    }
     if (stat(filePath.c_str(), &st) == 0)
         return 1;
     return 0;

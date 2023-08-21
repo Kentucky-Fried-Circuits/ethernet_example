@@ -19,6 +19,7 @@
 #include "index_html.h"
 #include "json_string.h"
 #include "hist_html.h"
+#include "hist_Month_html.h"
 
 // Content type constants
 #define CONTENT_TYPE_CSS "text/css"
@@ -309,20 +310,26 @@ static const httpd_uri_t date_handler = {
 
 /* NOTE: Action on the page handler*/
 
-// TODO: Finish this function
 static esp_err_t download_handler(httpd_req_t *req)
 {
     char filepath[FILE_PATH_MAX];
     FILE *fd = NULL;
     struct stat file_stat;
 
-    const char *filename = get_path_from_uri(filepath, ((struct file_server_data *)req->user_ctx)->base_path,
+    const char *filename = get_path_from_uri(filepath, server_data->base_path,
                                              req->uri, sizeof(filepath));
     if (!filename)
     {
         ESP_LOGE(TAG_WEB, "Filename is too long");
         /* Respond with 500 Internal Server Error */
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Filename too long");
+        return ESP_FAIL;
+    }
+
+    if (stat(filepath, &file_stat) == -1)
+    {
+        /* Respond with 404 Not Found */
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File does not exist");
         return ESP_FAIL;
     }
 
@@ -339,7 +346,7 @@ static esp_err_t download_handler(httpd_req_t *req)
     httpd_resp_set_type(req, CONTENT_TYPE_CSV);
 
     /* Retrieve the pointer to scratch buffer for temporary storage */
-    char *chunk = ((struct file_server_data *)req->user_ctx)->scratch;
+    char *chunk = server_data->scratch;
     size_t chunksize;
     do
     {
@@ -380,17 +387,71 @@ static const httpd_uri_t downloadFile = {
      * context to demonstrate it's usage */
     .user_ctx = (void *)""};
 
+/* Handler to delete a file from the server */
+static esp_err_t delete_post_handler(httpd_req_t *req)
+{
+    char filepath[FILE_PATH_MAX];
+    struct stat file_stat;
+
+    /* Skip leading "/delete" from URI to get filename */
+    /* Note sizeof() counts NULL termination hence the -1 */
+    const char *filename = get_path_from_uri(filepath, server_data->base_path,
+                                             req->uri + sizeof("/delete") - 1, sizeof(filepath));
+    if (!filename)
+    {
+        /* Respond with 500 Internal Server Error */
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Filename too long");
+        return ESP_FAIL;
+    }
+
+    /* Filename cannot have a trailing '/' */
+    if (filename[strlen(filename) - 1] == '/')
+    {
+        ESP_LOGE(TAG_WEB, "Invalid filename : %s", filename);
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Invalid filename");
+        return ESP_FAIL;
+    }
+
+    if (!hasFile(filepath))
+    {
+        ESP_LOGE(TAG_WEB, "File does not exist : %s", filename);
+        /* Respond with 400 Bad Request */
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "File does not exist");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG_WEB, "Deleting file : %s", filename);
+    /* Delete file */
+    deleteFile(filepath);
+
+    /* Redirect onto root to see the updated file list */
+    httpd_resp_set_status(req, "303 See Other");
+    httpd_resp_set_hdr(req, "Location", "/");
+#ifdef CONFIG_EXAMPLE_HTTPD_CONN_CLOSE_HEADER
+    httpd_resp_set_hdr(req, "Connection", "close");
+#endif
+    httpd_resp_sendstr(req, "File deleted successfully");
+    return ESP_OK;
+}
+
+httpd_uri_t file_delete = {
+    .uri = "/delete/*", // Match all URIs of type /delete/path/to/file
+    .method = HTTP_POST,
+    .handler = delete_post_handler,
+    .user_ctx = server_data // Pass server data as context
+};
+
 /* NOTE: Handlers under this line are for retrieving webpages */
 
 // TODO: Finish this function
 static esp_err_t historialMonthPage_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_HTML);
-    return httpd_resp_send(req, currentConditionPage, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req, HIST_MONTH_STRING, HTTPD_RESP_USE_STRLEN);
 }
 
 static const httpd_uri_t histMonthPage = {
-    .uri = "/",
+    .uri = "/historicalMonth",
     .method = HTTP_GET,
     .handler = historialMonthPage_get_handler,
     /* Let's pass response string in user
@@ -414,8 +475,6 @@ static const httpd_uri_t histPage = {
 // It will return a website
 static esp_err_t indexPage_get_handler(httpd_req_t *req)
 {
-    // httpd_unregister_uri_handler(server, histMonthPage);
-
     httpd_resp_set_type(req, CONTENT_TYPE_HTML);
     return httpd_resp_send(req, currentConditionPage, HTTPD_RESP_USE_STRLEN);
 }
@@ -460,8 +519,12 @@ httpd_handle_t start_webserver()
         httpd_register_uri_handler(server, &date_handler);
         httpd_register_uri_handler(server, &getUrlParam);
 
+        httpd_register_uri_handler(server, &downloadFile);
+        httpd_register_uri_handler(server, &file_delete);
+
         httpd_register_uri_handler(server, &indexPage);
         httpd_register_uri_handler(server, &histPage);
+        httpd_register_uri_handler(server, &histMonthPage);
 
         return server;
     }
