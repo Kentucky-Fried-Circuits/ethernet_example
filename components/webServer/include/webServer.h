@@ -52,15 +52,12 @@ const char *const TAG_WEB = "Web_Server";
 
 struct file_server_data
 {
-    /* Base path of file storage */
-    char base_path[FILE_PATH_MAX + 1];
-
     /* Scratch buffer for temporary storage during file transfer */
     char scratch[SCRATCH_BUFSIZE];
 };
 
 // NOTE: file_server.c
-const char *get_path_from_uri(char *uri, char *search, char *dest)
+void get_path_from_uri(const char *uri, char *search, char *filepath, char *filename);
 
 struct file_server_data *initFileServer();
 
@@ -81,13 +78,13 @@ public:
     std::vector<float> valueHolder;
 };
 
-char *getDataNow(long long time);
+std::string getDataNow(long long time);
 
-char *getHostInfoJson();
+std::string getHostInfoJson();
 
-char *getHistoryFiles();
+std::string getHistoryFiles();
 
-char *getDaysStats();
+std::string getDaysStats();
 
 void addToRecent(std::vector<float> liveData);
 

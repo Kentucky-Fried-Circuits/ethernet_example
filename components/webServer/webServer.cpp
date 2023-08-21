@@ -29,7 +29,7 @@
 #define CONTENT_TYPE_JSON "application/json"
 
 // A time for the timertick function in html
-long long this_time = 1690495162000;
+long long this_time = 1692628297000;
 struct file_server_data *server_data;
 httpd_handle_t server;
 
@@ -39,13 +39,13 @@ httpd_handle_t server;
  * This will return channel json string. Channel seems to hold
  * definition and explaining info for data return in dataNow.json
  */
-static esp_err_t channel_get_handler(httpd_req_t *req)
+esp_err_t channel_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
     return httpd_resp_send(req, channel_string, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t channel_handler = {
+const httpd_uri_t channel_handler = {
     .uri = "/channel.json",
     .method = HTTP_GET,
     .handler = channel_get_handler,
@@ -57,13 +57,16 @@ static const httpd_uri_t channel_handler = {
  * This will return the host info. It contains
  * memory info of the SD. It's only dummy value here.
  */
-static esp_err_t hostinfo_get_handler(httpd_req_t *req)
+esp_err_t hostinfo_get_handler(httpd_req_t *req)
 {
-    const char *hostInfo = getHostInfoJson();
+    memoryLogging();
+    ESP_LOGI(TAG_WEB, "current memory %zu", esp_get_free_heap_size());
+    std::string hostInfo = getHostInfoJson();
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
-    return httpd_resp_send(req, hostInfo, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req, hostInfo.c_str(), HTTPD_RESP_USE_STRLEN);
 }
-static const httpd_uri_t hostinfo_handler = {
+
+const httpd_uri_t hostinfo_handler = {
     .uri = "/hostinfo.json",
     .method = HTTP_GET,
     .handler = hostinfo_get_handler,
@@ -75,12 +78,12 @@ static const httpd_uri_t hostinfo_handler = {
  * Battery chart and amp in/out need some data to start with. This
  * is just some dummy data to jump start both charts.
  */
-static esp_err_t chartData_get_handler(httpd_req_t *req)
+esp_err_t chartData_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
     return httpd_resp_send(req, chartJumpStart_String, HTTPD_RESP_USE_STRLEN);
 }
-static const httpd_uri_t chartData = {
+const httpd_uri_t chartData = {
     .uri = "/recent.json",
     .method = HTTP_GET,
     .handler = chartData_get_handler,
@@ -88,13 +91,13 @@ static const httpd_uri_t chartData = {
      * context to demonstrate it's usage */
     .user_ctx = NULL};
 
-static esp_err_t dayStatsData_get_handler(httpd_req_t *req)
+esp_err_t dayStatsData_get_handler(httpd_req_t *req)
 {
-    char *dayStatsJson = getDaysStats();
+    std::string dayStatsJson = getDaysStats();
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
-    return httpd_resp_send(req, dayStatsJson, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req, dayStatsJson.c_str(), HTTPD_RESP_USE_STRLEN);
 }
-static const httpd_uri_t dayStatsData = {
+const httpd_uri_t dayStatsData = {
     .uri = "/dayStats.json",
     .method = HTTP_GET,
     .handler = dayStatsData_get_handler,
@@ -107,15 +110,15 @@ static const httpd_uri_t dayStatsData = {
  * real time in the actual project. This is the data shown under
  * "Now" table
  */
-static esp_err_t dataNow_get_handler(httpd_req_t *req)
+esp_err_t dataNow_get_handler(httpd_req_t *req)
 {
-    char *dataNowString = getDataNow(this_time);
+    std::string dataNowString = getDataNow(this_time);
     this_time += 10000;
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
-    return httpd_resp_send(req, dataNowString, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req, dataNowString.c_str(), HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t dataNow = {
+const httpd_uri_t dataNow = {
     .uri = "/dataNow.json",
     .method = HTTP_GET,
     .handler = dataNow_get_handler,
@@ -124,15 +127,16 @@ static const httpd_uri_t dataNow = {
 /**
  * This function retrieves the history file json string for the historical data page
  */
-static esp_err_t historyFiles_get_handler(httpd_req_t *req)
+esp_err_t historyFiles_get_handler(httpd_req_t *req)
 {
-    char *historyFileString = getHistoryFiles();
+    std::string historyFileString = getHistoryFiles();
     this_time += 10000;
     httpd_resp_set_type(req, CONTENT_TYPE_JSON);
-    return httpd_resp_send(req, historyFileString, HTTPD_RESP_USE_STRLEN);
+
+    return httpd_resp_send(req, historyFileString.c_str(), HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t histFile = {
+const httpd_uri_t histFile = {
     .uri = "/historyFiles.json",
     .method = HTTP_GET,
     .handler = historyFiles_get_handler,
@@ -144,13 +148,13 @@ static const httpd_uri_t histFile = {
  * This returns a css file for the html. Each external file requires a
  * separated handler.
  */
-static esp_err_t magnum_style_get_handler(httpd_req_t *req)
+esp_err_t magnum_style_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_CSS);
     return httpd_resp_send(req, magnum_css, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t magnumStyle = {
+const httpd_uri_t magnumStyle = {
     .uri = "/magnum_style.css",
     .method = HTTP_GET,
     .handler = magnum_style_get_handler,
@@ -158,13 +162,13 @@ static const httpd_uri_t magnumStyle = {
      * context to demonstrate it's usage */
     .user_ctx = (void *)""};
 
-static esp_err_t get_url_param_get_handler(httpd_req_t *req)
+esp_err_t get_url_param_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, GET_URL_PARAM, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t getUrlParam = {
+const httpd_uri_t getUrlParam = {
     .uri = "/jquery.getUrlParam.js",
     .method = HTTP_GET,
     .handler = get_url_param_get_handler,
@@ -175,13 +179,13 @@ static const httpd_uri_t getUrlParam = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t magnum_js_get_handler(httpd_req_t *req)
+esp_err_t magnum_js_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, magnum_js, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t magnumjs = {
+const httpd_uri_t magnumjs = {
     .uri = "/magnum.js",
     .method = HTTP_GET,
     .handler = magnum_js_get_handler,
@@ -192,13 +196,13 @@ static const httpd_uri_t magnumjs = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t jquery_11_get_handler(httpd_req_t *req)
+esp_err_t jquery_11_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, jquery_1_11, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t jquery_11 = {
+const httpd_uri_t jquery_11 = {
     .uri = "/jquery-1.11.1.min.js",
     .method = HTTP_GET,
     .handler = jquery_11_get_handler,
@@ -209,13 +213,13 @@ static const httpd_uri_t jquery_11 = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t excanas_get_handler(httpd_req_t *req)
+esp_err_t excanas_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, excanvas, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t excanvasJS = {
+const httpd_uri_t excanvasJS = {
     .uri = "/excanvas.min.js",
     .method = HTTP_GET,
     .handler = excanas_get_handler,
@@ -226,13 +230,13 @@ static const httpd_uri_t excanvasJS = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t jquery_float_get_handler(httpd_req_t *req)
+esp_err_t jquery_float_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, jqueryfloat, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t jquery_float = {
+const httpd_uri_t jquery_float = {
     .uri = "/jquery.flot.js",
     .method = HTTP_GET,
     .handler = jquery_float_get_handler,
@@ -243,13 +247,13 @@ static const httpd_uri_t jquery_float = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t jquery_threshold_get_handler(httpd_req_t *req)
+esp_err_t jquery_threshold_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, jqery_threshold, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t jquery_threshold = {
+const httpd_uri_t jquery_threshold = {
     .uri = "/jquery.flot.threshold.js",
     .method = HTTP_GET,
     .handler = jquery_threshold_get_handler,
@@ -260,13 +264,13 @@ static const httpd_uri_t jquery_threshold = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t howler_get_handler(httpd_req_t *req)
+esp_err_t howler_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, howler, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t howler_handler = {
+const httpd_uri_t howler_handler = {
     .uri = "/howler.min.js",
     .method = HTTP_GET,
     .handler = howler_get_handler,
@@ -277,13 +281,13 @@ static const httpd_uri_t howler_handler = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t alarm_get_handler(httpd_req_t *req)
+esp_err_t alarm_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, alarm_js, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t alarm_handler = {
+const httpd_uri_t alarm_handler = {
     .uri = "/alarm.js",
     .method = HTTP_GET,
     .handler = alarm_get_handler,
@@ -294,13 +298,13 @@ static const httpd_uri_t alarm_handler = {
 /**
  * This will return a required javascript file for html.
  */
-static esp_err_t date_get_handler(httpd_req_t *req)
+esp_err_t date_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_JS);
     return httpd_resp_send(req, date_js, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t date_handler = {
+const httpd_uri_t date_handler = {
     .uri = "/date.js",
     .method = HTTP_GET,
     .handler = date_get_handler,
@@ -310,14 +314,16 @@ static const httpd_uri_t date_handler = {
 
 /* NOTE: Action on the page handler*/
 
-static esp_err_t download_handler(httpd_req_t *req)
+esp_err_t download_handler(httpd_req_t *req)
 {
     char filepath[FILE_PATH_MAX];
+    char filename[FILE_PATH_MAX];
     FILE *fd = NULL;
     struct stat file_stat;
 
-    const char *filename = get_path_from_uri(req->uri, DOWNLOAD_URI, filepath);
-    ESP_LOGI(TAG_WEB, "base path is %s, uri is %s, size is %d", server_data->base_path, req->uri, sizeof(filepath));
+    get_path_from_uri(req->uri, DOWNLOAD_URI, filepath, filename);
+
+    ESP_LOGI(TAG_WEB, "filename is %s, uri is %s, path is %s", filename, req->uri, filepath);
     if (!filename)
     {
         ESP_LOGE(TAG_WEB, "Filename is too long");
@@ -388,14 +394,15 @@ httpd_uri_t downloadFile = {
 };
 
 /* Handler to delete a file from the server */
-static esp_err_t delete_post_handler(httpd_req_t *req)
+esp_err_t delete_post_handler(httpd_req_t *req)
 {
     char filepath[FILE_PATH_MAX];
+    char filename[FILE_PATH_MAX];
     struct stat file_stat;
 
     /* Skip leading "/delete" from URI to get filename */
     /* Note sizeof() counts NULL termination hence the -1 */
-    const char *filename = get_path_from_uri(req->uri, DELETE_URI, filepath);
+    get_path_from_uri(req->uri, DELETE_URI, filepath, filename);
 
     if (!filename)
     {
@@ -441,13 +448,13 @@ httpd_uri_t file_delete = {
 /* NOTE: Handlers under this line are for retrieving webpages */
 
 // TODO: Finish this function
-static esp_err_t historialMonthPage_get_handler(httpd_req_t *req)
+esp_err_t historialMonthPage_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_HTML);
     return httpd_resp_send(req, HIST_MONTH_STRING, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t histMonthPage = {
+const httpd_uri_t histMonthPage = {
     .uri = "/historicalMonth",
     .method = HTTP_GET,
     .handler = historialMonthPage_get_handler,
@@ -456,13 +463,13 @@ static const httpd_uri_t histMonthPage = {
     .user_ctx = NULL};
 
 // TODO: Finish this function
-static esp_err_t historialPage_get_handler(httpd_req_t *req)
+esp_err_t historialPage_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_HTML);
     return httpd_resp_send(req, HISTORICAL_DATA_PAGE, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t histPage = {
+const httpd_uri_t histPage = {
     .uri = "/historical",
     .method = HTTP_GET,
     .handler = historialPage_get_handler,
@@ -470,13 +477,13 @@ static const httpd_uri_t histPage = {
 
 // This function will handle the ip/ request
 // It will return a website
-static esp_err_t indexPage_get_handler(httpd_req_t *req)
+esp_err_t indexPage_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, CONTENT_TYPE_HTML);
     return httpd_resp_send(req, currentConditionPage, HTTPD_RESP_USE_STRLEN);
 }
 
-static const httpd_uri_t indexPage = {
+const httpd_uri_t indexPage = {
     .uri = "/",
     .method = HTTP_GET,
     .handler = indexPage_get_handler,
@@ -525,6 +532,8 @@ httpd_handle_t start_webserver()
         httpd_register_uri_handler(server, &indexPage);
         httpd_register_uri_handler(server, &histPage);
         httpd_register_uri_handler(server, &histMonthPage);
+
+        ESP_LOGI(TAG_WEB, "Current free heap %zu", esp_get_free_heap_size());
 
         return server;
     }

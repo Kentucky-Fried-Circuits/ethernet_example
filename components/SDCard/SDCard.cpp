@@ -68,6 +68,21 @@ int logStringToFile(const char *formattedString, char *fileName)
     return 1;
 }
 
+void memoryLogging()
+{
+    std::string fullPath;
+    fullPath.append(MOUNT_POINT).append("/").append("logging.csv");
+    FILE *f = fopen(fullPath.c_str(), "a");
+    if (f == NULL)
+    {
+        ESP_LOGE(TAG_SD, "Failed to open file for writing");
+        return;
+    }
+    fprintf(f, "%zu\n", esp_get_free_heap_size());
+    fclose(f);
+    ESP_LOGI(TAG_SD, "SUCCESS");
+}
+
 /**
  * Retrun a bool value whether the SD card is mounted or not
  */

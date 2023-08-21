@@ -11,29 +11,19 @@
 
 /* Copies the full path into destination buffer and returns
  * pointer to path (skipping the preceding base path) */
-const char *get_path_from_uri(char *uri, char *search, char *dest)
+void get_path_from_uri(const char *uri, char *search, char *filepath, char *filename)
 {
-    const char *finalString;
     std::string csvFile;
     std::string baseURI(uri);
     std::string searchingString(search);
     std::string replace(MOUNT_POINT);
     size_t pos = baseURI.find(search);
 
-    csvFile = uri.substr(pos + searchingString.length());
+    csvFile = baseURI.substr(pos + searchingString.length());
     replace.append("/").append(csvFile);
 
-    dest = replace.c_str();
-    finalString = csvFile.c_str();
-    return finalString;
-}
-
-/* Construct full path (base + path) */
-strcpy(dest, base_path);
-strlcpy(dest + base_pathlen, uri, pathlen + 1);
-
-/* Return pointer to path, skipping the base */
-return dest + base_pathlen;
+    strcpy(filename, csvFile.c_str());
+    strcpy(filepath, replace.c_str());
 }
 
 struct file_server_data *initFileServer()
@@ -47,12 +37,13 @@ struct file_server_data *initFileServer()
         ESP_LOGE(TAG_WEB, "Failed to allocate memory for server data");
         return NULL;
     }
-    strlcpy(server_data->base_path, MOUNT_POINT,
-            sizeof(server_data->base_path));
 
     return server_data;
 }
 
+/**
+ * Return a vector of strings that are all the files' name in the sd card. 
+*/
 std::vector<std::string> getAllFileName()
 {
     char entrypath[16];

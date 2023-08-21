@@ -55,9 +55,11 @@ cJSON *createDataNowJSONObj2(const char *channelData, const char *timeVal, const
  *
  * FIXME: Eventually replace the dummy value with other things
  */
-char *getDataNow(long long time)
+std::string getDataNow(long long time)
 {
+    ESP_LOGI(TAG_WEB, "Before dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
     char *JSONString = NULL;
+    std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *data = NULL;
     const char *currentTime = intToString(time).c_str();
@@ -108,26 +110,32 @@ char *getDataNow(long long time)
     cJSON_AddItemToArray(data, createDataNowJSONObj2("age_ags_0xA1", currentTime, intToString(9.0).c_str())); // Dummy value
 
     JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
     cJSON_Delete(JSONObj);
-    return JSONString;
+
+    ESP_LOGI(TAG_WEB, "After dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
+    return returnString;
 }
 
-char *getHostInfoJson()
+std::string getHostInfoJson()
 {
     char *JSONString = NULL;
+    std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *drives = NULL;
     cJSON *sd_card = NULL;
-    uint32_t tot, free;
+    uint32_t tot, freeSpace;
     bool ret;
     if (!isMounted())
         initi_sd_card();
     if (isMounted())
-        ret = SD_getFreeSpace(&tot, &free);
+        ret = SD_getFreeSpace(&tot, &freeSpace);
     else
-        tot = free = 0;
+        tot = freeSpace = 0;
 
-    ESP_LOGI("SD_CARD", "%i KiB total drive space. %i KiB available.", tot, free);
+    ESP_LOGI("SD_CARD", "%i KiB total drive space. %i KiB available.", tot, freeSpace);
     JSONObj = cJSON_CreateObject();
 
     cJSON_AddStringToObject(JSONObj, "hostname", "RAYCING");
@@ -136,35 +144,46 @@ char *getHostInfoJson()
 
     // SD card info
     cJSON_AddNumberToObject(sd_card, "total", tot);
-    cJSON_AddNumberToObject(sd_card, "used", tot - free);
-    cJSON_AddNumberToObject(sd_card, "avail", free);
+    cJSON_AddNumberToObject(sd_card, "used", tot - freeSpace);
+    cJSON_AddNumberToObject(sd_card, "avail", freeSpace);
     cJSON_AddStringToObject(sd_card, "description", "SD_Card");
 
     JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
     cJSON_Delete(JSONObj);
-    return JSONString;
+
+    return returnString;
 }
 
-char *getHistoryFiles()
+std::string getHistoryFiles()
 {
-    cJSON *data = NULL;
+    ESP_LOGI(TAG_WEB, "Before getHistFile fucntion. Current free heap %zu", esp_get_free_heap_size());
+    cJSON *JSONObj = NULL;
     cJSON *history_files = NULL;
     cJSON *files = NULL;
     char *JSONString = NULL;
+    std::string returnString;
 
     std::vector<std::string> fileNames = getAllFileName();
 
-    data = cJSON_CreateObject();
-    cJSON_AddItemToObject(data, "history_files", history_files = cJSON_CreateObject());
+    JSONObj = cJSON_CreateObject();
+    cJSON_AddItemToObject(JSONObj, "history_files", history_files = cJSON_CreateObject());
     cJSON_AddItemToObject(history_files, "files", files = cJSON_CreateArray());
 
     for (auto &it : fileNames)
     {
         cJSON_AddItemToArray(files, cJSON_CreateString(it.c_str()));
     }
-    JSONString = cJSON_Print(data);
-    cJSON_Delete(data);
-    return JSONString;
+    JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
+    cJSON_Delete(JSONObj);
+
+    ESP_LOGI(TAG_WEB, "After dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
+    return returnString;
 }
 
 cJSON *createDayStatObj(historyObj temp)
@@ -177,9 +196,10 @@ cJSON *createDayStatObj(historyObj temp)
     return dataHolder;
 }
 
-char *getDaysStats()
+std::string getDaysStats()
 {
     char *JSONString = NULL;
+    std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *dayStats = NULL;
 
@@ -192,8 +212,13 @@ char *getDaysStats()
     }
 
     JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
     cJSON_Delete(JSONObj);
-    return JSONString;
+
+    ESP_LOGI(TAG_WEB, "After dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
+    return returnString;
 }
 
 /**

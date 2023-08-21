@@ -21,6 +21,7 @@ static bool SDCARDMOUNTED = false;
 esp_err_t initi_sd_card(void);
 esp_err_t unmount_sd_card(void);
 int logStringToFile(const char *formattedString, char *fileName);
+void memoryLogging();
 bool isMounted(void);
 bool SD_getFreeSpace(uint32_t *tot, uint32_t *free);
 void deleteFile(char *filePath);
