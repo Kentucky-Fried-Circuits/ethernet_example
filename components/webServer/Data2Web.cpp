@@ -24,12 +24,12 @@ std::string intToString(T value)
  * will store all the number value ones.
  */
 template <typename T>
-cJSON *createDataNowJSONObj(const char *channelData, const char *timeVal, T sampleVal)
+cJSON *createDataNowJSONObj(const char *channelData, long long timeVal, T sampleVal)
 {
     cJSON *dataHolder = NULL;
     dataHolder = cJSON_CreateObject();
     cJSON_AddStringToObject(dataHolder, "channel", (const char *const)channelData);
-    cJSON_AddStringToObject(dataHolder, "time", (const char *const)timeVal);
+    cJSON_AddNumberToObject(dataHolder, "time", timeVal);
     cJSON_AddNumberToObject(dataHolder, "avg", sampleVal);
     return dataHolder;
 }
@@ -39,12 +39,12 @@ cJSON *createDataNowJSONObj(const char *channelData, const char *timeVal, T samp
  * In html code, all sampleValue will be parsed into the desired value, so
  * we can just store as string here.
  */
-cJSON *createDataNowJSONObj2(const char *channelData, const char *timeVal, const char *sampleVal)
+cJSON *createDataNowJSONObj2(const char *channelData, long long timeVal, const char *sampleVal)
 {
     cJSON *dataHolder = NULL;
     dataHolder = cJSON_CreateObject();
     cJSON_AddStringToObject(dataHolder, "channel", (const char *const)channelData);
-    cJSON_AddStringToObject(dataHolder, "time", (const char *const)timeVal);
+    cJSON_AddNumberToObject(dataHolder, "time", timeVal);
     cJSON_AddStringToObject(dataHolder, "sampleValue", (const char *const)sampleVal);
     return dataHolder;
 }
@@ -62,7 +62,7 @@ std::string getDataNow(long long time)
     std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *data = NULL;
-    const char *currentTime = intToString(time).c_str();
+    long long currentTime = time;
     std::mt19937_64 rng(time);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
@@ -254,7 +254,7 @@ std::string getRecentData()
     cJSON *JSONObj = NULL;
     cJSON *recent = NULL;
     long long tempTime = 10000;
-    
+
     JSONObj = cJSON_CreateObject();
     cJSON_AddItemToObject(JSONObj, "recent", recent = cJSON_CreateArray());
 

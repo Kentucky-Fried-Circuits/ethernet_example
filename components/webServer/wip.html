@@ -335,7 +335,7 @@
 
         /* There isn't any kind of age indication in these packets as of now, so we have to remember the last packet time and check against that */
 
-        if (lastTime != parseInt(dataAr[lastCh].time)) {
+        if (lastTime != dataAr[lastCh].time) {
           seconds = 0;
           lastTime = curTime;
           oldData = false;
@@ -344,14 +344,14 @@
           customFaults(null);
         }
 
-        lastTime = parseInt(dataAr[lastCh].time);
-        nowTimeStamp = parseInt(dataAr[lastCh].time);
+        lastTime = dataAr[lastCh].time;
+        nowTimeStamp = dataAr[lastCh].time;
 
         addLine(
           "currentTable",
           "Data Date (UTC):",
           '<span id="convDate">' +
-            getUTCTime(parseInt(dataAr[lastCh].time)) +
+            getUTCTime(dataAr[lastCh].time) +
             '</span><br>Report received <span id="ageRep">' +
             commaSeparateNumber(seconds) +
             "</span> seconds ago",
@@ -943,20 +943,7 @@
             data.amp_in_out.shift();
           }
         }
-        // if (data.calc.length != 0) {
-        //   if (
-        //     null != dataAr["calc_add_power"].avg &&
-        //     dataAr["calc_add_power"].time != data.calc[data.calc.length - 1][0]
-        //   ) {
-        //     data.calc.push([
-        //       dataAr["calc_add_power"].time,
-        //       dataAr["calc_add_power"].avg,
-        //     ]);
-        //   }
-        //   while (data.calc[0][0] < dayAgo) {
-        //     data.calc.shift();
-        //   }
-        // }
+
         /* if array has more than 24 hours of data, shift data out */
 
         var dayAgo = new Date().getTime() - 1000 * 60 * 60 * 24;
@@ -1978,18 +1965,18 @@
     </div>
     <span id="preloadedImages"></span>
 
-      <br />
-      <br />
-      <div style="text-align: center; padding-bottom: 50px">
-        <h5 style="color: #666">
-          &copy; 2023. All rights reserved.<br /><br />
-          <em
-            >Powered by
-            <a target="_blank" href="https://www.solarstik.com/"
-              >Solar Stik, Inc.</a
-            >
-          </em>
-        </h5>
-      </div>
-    </body>
-  </html>
+    <br />
+    <br />
+    <div style="text-align: center; padding-bottom: 50px">
+      <h5 style="color: #666">
+        &copy; 2023. All rights reserved.<br /><br />
+        <em
+          >Powered by
+          <a target="_blank" href="https://www.solarstik.com/"
+            >Solar Stik, Inc.</a
+          >
+        </em>
+      </h5>
+    </div>
+  </body>
+</html>
