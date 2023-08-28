@@ -52,7 +52,7 @@
               <a href="/">Current Conditions</a>
             </li>
             <li>
-              <a href="currentSettings.html">Current Settings</a>
+              <a href="currentSettings">Current Settings</a>
             </li>
             <li>
               <a href="/historical">Historical Data</a>
@@ -96,6 +96,7 @@
       var isIE = msieversion();
       var channels;
       var curTime;
+      var hasSDCard = false;
 
       /* This script kindly provided by Microsoft */
       function msieversion() {
@@ -147,11 +148,30 @@
         xhr.send();
       }
 
+      function hideMemTable() {
+        var memTable = document.getElementById("memTable");
+        var memMsg = document.getElementById("sdMsg");
+        var hourTable = document.getElementById("hourTable");
+
+        if (hasSDCard) {
+          memTable.style.display = "";
+          memMsg.style.display = "none";
+          hourTable.style.display = "";
+        } else {
+          memTable.style.display = "none";
+          memMsg.style.display = "";
+          hourTable.style.display = "none";
+        }
+      }
+
       //TODO: Check if dayKB is still correct
       function processHostInfo(dataS, create) {
         $("#headline").html(
           "PRO-Verter RMK (" + dataS.hostname + "): Current Conditions"
         );
+
+        hasSDCard = dataS.hasSDCard;
+        hideMemTable();
 
         var total = getMemory("SD_Card", "total", dataS.drives);
         var free = getMemory("SD_Card", "avail", dataS.drives);
@@ -190,30 +210,6 @@
         } else {
           $("#memoryData").hide();
         }
-        // USB is not used anymore.
-        // /* if USB is plugged in */
-        // if (-1 != getMemory("/media/usb0", "total", dataS.drives)) {
-        //   $(".usbRow").show();
-
-        //   /* safe to remove? */
-        //   var readOnly = getMemory("/media/usb0", "readOnly", dataS.drives);
-        //   if (!readOnly) {
-        //     $("#usbMsg").html(
-        //       "File copy in progess<br>DO NOT REMOVE<br>EXTERNAL STORAGE</span>"
-        //     );
-        //     $("#usbMsg").css("background-color", "red");
-        //     $("#usbMsg").css("color", "white");
-        //     MemUp();
-        //   } else {
-        //     $("#usbMsg").html(
-        //       "File copy is complete.<br>You may safely remove<br>external storage</span>"
-        //     );
-        //     $("#usbMsg").css("background-color", "green");
-        //     $("#usbMsg").css("color", "white");
-        //   }
-        // } else {
-        //   $(".usbRow").hide();
-        // }
 
         /* warning if low on space */
         if (daysLeft <= 30) {
@@ -311,8 +307,9 @@
           agsRows(dataAr, create);
 
           /* 24hour data */
-          //dailyStats(dataAr,create);
-          loadDayData(dataAr, create); //TODO: This is removed for now since we don't have 24 hours data
+          if (hasSDCard) {
+            loadDayData(dataAr, create);
+          }
 
           /* plot graphs */
           if (create && parseInt(dataAr["age_bmk"].sampleValue) < 100)
@@ -1632,50 +1629,6 @@
             }
           );
         }
-        // if (0 != data.calc.length) {
-        //   dataArray = data.calc;
-        //   dataArray = tenMinuteAverages(dataArray);
-        //   for (var i = 0; i < dataArray.length; i++) {
-        //     calcArray[i] = [i, dataArray[i]];
-        //   }
-        //   while (calcArray.length <= 144) {
-        //     calcArray.push([-calcArray.length, 0]);
-        //   }
-
-        /* plot the flot chart */
-        /*$.plot("#calcChart", [{
-      				data: calcArray,
-      				bars: {
-      					show: true,
-      					lineWidth:0,
-      					barWidth: .5,
-      					align: "left",
-      					fill: 1
-      				},
-      				color: '#000000',
-      				threshold: [{
-      					below: 0,
-      					color: '#f04040'
-      				}, {
-      					below: 0,
-      					color: '#f7a11a'
-      				}]
-      			}], {
-      				grid: {
-      					borderWidth: 0,
-      					hoverable: true,
-      					autoHighlight: false
-      				},
-      				xaxis: {
-      					tickLength: 0,
-      					ticks:0
-      				},
-      				yaxis: {
-      					tickLength: 0,
-      					ticks: 3
-      				}
-      		});*/
-        // }
       }
 
       /* find the ten minute averages for flot charts */
@@ -1923,6 +1876,14 @@
         >
         <h3 style="color: #ffffff; padding-bottom: 10px">
           Memory<br /><span style="font-size: 0.75em">click to show/hide</span>
+        </h3>
+
+        <br />
+        <h3
+          id="sdMsg"
+          style="color: #ffffff; padding-bottom: 10px; display: none"
+        >
+          SD card is not inserted. Please reinsert the SD card.
         </h3>
       </div>
 

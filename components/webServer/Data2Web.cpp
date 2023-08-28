@@ -127,18 +127,24 @@ std::string getHostInfoJson()
     cJSON *drives = NULL;
     cJSON *sd_card = NULL;
     uint32_t tot, freeSpace;
-    bool ret;
+    bool ret = false;
+    esp_err_t ret2 = ESP_OK;
+
     if (!isMounted())
-        initi_sd_card();
-    if (isMounted())
+    {
+        ret2 = initi_sd_card();
+    }
+
+    if (ret2 == ESP_OK)
         ret = SD_getFreeSpace(&tot, &freeSpace);
-    else
+
+    if (!ret)
         tot = freeSpace = 0;
 
-    ESP_LOGI("SD_CARD", "%i KiB total drive space. %i KiB available.", tot, freeSpace);
     JSONObj = cJSON_CreateObject();
 
     cJSON_AddStringToObject(JSONObj, "hostname", "RAYCING");
+    cJSON_AddBoolToObject(JSONObj, "hasSDCard", ret);
     cJSON_AddItemToObject(JSONObj, "drives", drives = cJSON_CreateArray());
     cJSON_AddItemToArray(drives, sd_card = cJSON_CreateObject());
 
@@ -247,7 +253,6 @@ std::string getRecentData()
         ESP_LOGI(TAG_WEB, "Map is empty");
         return "{\"recent\":[]}";
     }
-    ESP_LOGI(TAG_WEB, "Map size is %d", histMap["b_dc_watts"].valueHolder.size());
 
     char *JSONString = NULL;
     std::string returnString;

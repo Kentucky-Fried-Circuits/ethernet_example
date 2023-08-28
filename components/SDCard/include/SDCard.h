@@ -6,11 +6,15 @@
 #include <stdio.h>
 #include <string>
 #include <sys/stat.h>
+#include <errno.h>
+
 #include "esp_log.h"
 #include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
 #include "esp_vfs_fat.h"
+
+#include "dataLogging.h"
 
 #define MOUNT_POINT "/sdcard"
 const char *const TAG_SD = "SD_Card";

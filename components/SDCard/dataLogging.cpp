@@ -173,21 +173,8 @@ void dataNowLog(void *pv_args)
  */
 void startLogging()
 {
-    if (!isMounted())
-    {
-        esp_err_t mounted = initi_sd_card();
-        if (mounted != ESP_OK)
-        {
-            ESP_LOGE(TAG_DL, "SD card failed to mount, logging task didn't start");
-            return;
-        }
-
+    if (!task_handle)
         BaseType_t ret = xTaskCreate(dataNowLog, "dataNow_Logging_Task", 8192, NULL, 5, &task_handle);
-        if (ret == pdPASS)
-        {
-            ESP_LOGI(TAG_DL, "Successfully started the task");
-        }
-    }
 }
 
 /**
@@ -204,5 +191,5 @@ void stopLogging()
 
 void starterFunction()
 {
-    startLogging();
+    initi_sd_card();
 }

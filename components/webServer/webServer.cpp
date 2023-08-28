@@ -451,12 +451,13 @@ httpd_uri_t file_delete = {
 // TODO: Finish this function
 esp_err_t historialMonthPage_get_handler(httpd_req_t *req)
 {
+    initi_sd_card();
     httpd_resp_set_type(req, CONTENT_TYPE_HTML);
-    return httpd_resp_send(req, HIST_MONTH_STRING, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req, currentConditionPage, HTTPD_RESP_USE_STRLEN);
 }
 
 const httpd_uri_t histMonthPage = {
-    .uri = "/historicalMonth",
+    .uri = "/currentSettings",
     .method = HTTP_GET,
     .handler = historialMonthPage_get_handler,
     /* Let's pass response string in user

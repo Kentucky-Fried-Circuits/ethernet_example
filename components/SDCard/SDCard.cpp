@@ -9,6 +9,9 @@
  */
 esp_err_t initi_sd_card(void)
 {
+    if (isMounted())
+        unmount_sd_card();
+
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_PROBING;
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -24,6 +27,7 @@ esp_err_t initi_sd_card(void)
     {
         SDCARDMOUNTED = true;
         ESP_LOGI(TAG_SD, "Mounted");
+        startLogging();
     }
     return err;
 }
@@ -38,7 +42,8 @@ esp_err_t unmount_sd_card(void)
     if (err == ESP_OK)
     {
         SDCARDMOUNTED = false;
-        ESP_LOGI(TAG_SD, "Not Mounted");
+        stopLogging();
+        ESP_LOGI(TAG_SD, "SD card is unmounted");
     }
 
     return err;
@@ -100,9 +105,9 @@ bool SD_getFreeSpace(uint32_t *tot, uint32_t *free)
 {
     FATFS *fs;
     DWORD fre_clust, fre_sect, tot_sect;
-
+    FRESULT result = f_getfree("0:", &fre_clust, &fs);
     /* Get volume information and free clusters of drive 0 */
-    if (f_getfree("0:", &fre_clust, &fs) == FR_OK)
+    if (result == FR_OK)
     {
         /* Get total sectors and free sectors */
         tot_sect = (fs->n_fatent - 2) * fs->csize;
@@ -115,6 +120,10 @@ bool SD_getFreeSpace(uint32_t *tot, uint32_t *free)
         ESP_LOGD("SD_CARD", "%i KiB total drive space. %i KiB available.", *tot, *free);
 
         return true;
+    }
+    else if (result == FR_NOT_READY)
+    {
+        unmount_sd_card();
     }
     return false;
 }
@@ -138,5 +147,9 @@ int hasFile(char *fileName)
     }
     if (stat(filePath.c_str(), &st) == 0)
         return 1;
+
+    if (errno != ENOENT)
+        unmount_sd_card();
+
     return 0;
 }
