@@ -133,6 +133,10 @@ void deleteFile(char *filePath)
     unlink(filePath);
 }
 
+/**
+ * Check if a file exists in the SD card or not. Return 1 or 0 depends on whether
+ * the SD card has it or not. If there is no sd card, we unmount the sd card.
+ */
 int hasFile(char *fileName)
 {
     struct stat st;

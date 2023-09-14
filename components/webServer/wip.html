@@ -148,6 +148,7 @@
         xhr.send();
       }
 
+      /* If SD card is not mounted, hide the screen showing sd card memory and 24 hour data.*/
       function hideMemTable() {
         var memTable = document.getElementById("memTable");
         var memMsg = document.getElementById("sdMsg");
@@ -1700,7 +1701,10 @@
           loadData(false);
         }
 
-        loadHeadline(false);
+        //Grab host info every 3 seconds.
+        if (seconds % 3 == 0) {
+          loadHeadline(false);
+        }
 
         setTimeout(timerTick, 1000);
       }

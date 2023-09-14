@@ -13,18 +13,6 @@
   </head>
   <body style="background-color: #ffffff; margin-top: 0px">
     <div
-      id="loadOverlay"
-      style="
-        background-color: #333;
-        position: absolute;
-        top: 0px;
-        left: 0px;
-        width: 100%;
-        height: 100%;
-        z-index: 2000;
-      "
-    ></div>
-    <div
       id="wrapper"
       style="
         width: 100%;
@@ -139,8 +127,8 @@
               hasSDCard = jsonData.hasSDCard;
               if (hasSDCard) {
                 getFiles();
-              }else{
-                document.getElementById('noSDCard').style.display = '';
+              } else {
+                document.getElementById("noSDCard").style.display = "";
               }
             } else {
               console.error("Error:", xhr.status);
