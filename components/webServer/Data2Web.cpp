@@ -74,7 +74,7 @@ std::string getDataNow(long long time)
     double volt = 25.0 + 5.0 * dist(rng);
     double amp = 1 + 1 * dist(rng);
     double watt = volt * amp;
-    cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_volts", currentTime, volt));
+    cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_volts", currentTime, volt / 100.0));
     cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_amps", currentTime, amp));
     cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_watts", currentTime, watt)); // TODO: Needs to merge first
     cJSON_AddItemToArray(data, createDataNowJSONObj("b_state_of_charge", currentTime, 95 + 5 * dist(rng)));
@@ -127,7 +127,7 @@ std::string getHostInfoJson()
     cJSON *drives = NULL;
     cJSON *sd_card = NULL;
     uint32_t tot, freeSpace;
-    bool ret = false;
+    tot = freeSpace = 0;
     esp_err_t ret2 = ESP_OK;
 
     if (!isMounted())
@@ -135,16 +135,14 @@ std::string getHostInfoJson()
         ret2 = initi_sd_card();
     }
 
+    // This function will unmount sd card if the sd card can't be found
     if (ret2 == ESP_OK)
-        ret = SD_getFreeSpace(&tot, &freeSpace);
-
-    if (!ret)
-        tot = freeSpace = 0;
+        SD_getFreeSpace(&tot, &freeSpace);
 
     JSONObj = cJSON_CreateObject();
 
     cJSON_AddStringToObject(JSONObj, "hostname", "RAYCING");
-    cJSON_AddBoolToObject(JSONObj, "hasSDCard", ret);
+    cJSON_AddBoolToObject(JSONObj, "hasSDCard", isMounted());
     cJSON_AddItemToObject(JSONObj, "drives", drives = cJSON_CreateArray());
     cJSON_AddItemToArray(drives, sd_card = cJSON_CreateObject());
 
