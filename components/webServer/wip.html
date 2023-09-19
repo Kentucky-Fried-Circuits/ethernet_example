@@ -485,7 +485,7 @@
           addCat(
             "currentTable",
             "Data Supplied By Inverter (" +
-              inverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
+              magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
               ")",
             create
           );
@@ -494,7 +494,7 @@
           addLine(
             "currentTable",
             "Status:",
-            inverterStatus(parseInt(dataAr["i_status"].sampleValue)),
+            magnumInverterStatus(parseInt(dataAr["i_status"].sampleValue)),
             "iStatus",
             create
           );
@@ -528,7 +528,7 @@
           if (
             (null == dataAr["length_inverter"] ||
               parseInt(dataAr["length_inverter"].sampleValue) >= 20) &&
-            inverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
+            magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
           ) {
             displayMeters = true;
           }
@@ -542,7 +542,8 @@
             exportMeters = true;
 
             if (
-              1 == inverterModel(parseInt(dataAr["i_model"].sampleValue), 3)
+              1 ==
+              magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 3)
             ) {
               vacScale = 2.0;
             }
@@ -590,7 +591,8 @@
                 create
               );
               if (
-                1 == inverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
+                1 ==
+                magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
               ) {
                 s =
                   "Approximately " +
@@ -644,7 +646,8 @@
             /* AC in */
             if (
               dataAr["i_ac_volts_in"].avg >= 80 &&
-              1 == inverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
+              1 ==
+                magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
             ) {
               s =
                 "Approximately " +
@@ -1044,7 +1047,7 @@
           addHourCat(
             "hourTable",
             "Data Supplied By Inverter (" +
-              inverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
+              magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
               ")",
             create
           );
@@ -1071,7 +1074,7 @@
           if (
             (null == dataAr["length_inverter"] ||
               parseInt(dataAr["length_inverter"].sampleValue) >= 20) &&
-            inverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
+            magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
           ) {
             displayMeters = true;
           }
@@ -1166,7 +1169,7 @@
           }
           updateHourRowTempAGS(
             "hourTable",
-            "a_temperature_clean",
+            "a_temperature",
             "AGS Temperature:",
             dayData.dayStats,
             create
