@@ -24,12 +24,12 @@ std::string intToString(T value)
  * will store all the number value ones.
  */
 template <typename T>
-cJSON *createDataNowJSONObj(const char *channelData, const char *timeVal, T sampleVal)
+cJSON *createDataNowJSONObj(const char *channelData, long long timeVal, T sampleVal)
 {
     cJSON *dataHolder = NULL;
     dataHolder = cJSON_CreateObject();
     cJSON_AddStringToObject(dataHolder, "channel", (const char *const)channelData);
-    cJSON_AddStringToObject(dataHolder, "time", (const char *const)timeVal);
+    cJSON_AddNumberToObject(dataHolder, "time", timeVal);
     cJSON_AddNumberToObject(dataHolder, "avg", sampleVal);
     return dataHolder;
 }
@@ -39,12 +39,12 @@ cJSON *createDataNowJSONObj(const char *channelData, const char *timeVal, T samp
  * In html code, all sampleValue will be parsed into the desired value, so
  * we can just store as string here.
  */
-cJSON *createDataNowJSONObj2(const char *channelData, const char *timeVal, const char *sampleVal)
+cJSON *createDataNowJSONObj2(const char *channelData, long long timeVal, const char *sampleVal)
 {
     cJSON *dataHolder = NULL;
     dataHolder = cJSON_CreateObject();
     cJSON_AddStringToObject(dataHolder, "channel", (const char *const)channelData);
-    cJSON_AddStringToObject(dataHolder, "time", (const char *const)timeVal);
+    cJSON_AddNumberToObject(dataHolder, "time", timeVal);
     cJSON_AddStringToObject(dataHolder, "sampleValue", (const char *const)sampleVal);
     return dataHolder;
 }
@@ -55,12 +55,14 @@ cJSON *createDataNowJSONObj2(const char *channelData, const char *timeVal, const
  *
  * FIXME: Eventually replace the dummy value with other things
  */
-char *getDataNow(long long time)
+std::string getDataNow(long long time)
 {
+    ESP_LOGI(TAG_WEB, "Before dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
     char *JSONString = NULL;
+    std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *data = NULL;
-    const char *currentTime = intToString(time).c_str();
+    long long currentTime = time;
     std::mt19937_64 rng(time);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
@@ -72,7 +74,7 @@ char *getDataNow(long long time)
     double volt = 25.0 + 5.0 * dist(rng);
     double amp = 1 + 1 * dist(rng);
     double watt = volt * amp;
-    cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_volts", currentTime, volt));
+    cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_volts", currentTime, volt / 100.0));
     cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_amps", currentTime, amp));
     cJSON_AddItemToArray(data, createDataNowJSONObj("b_dc_watts", currentTime, watt)); // TODO: Needs to merge first
     cJSON_AddItemToArray(data, createDataNowJSONObj("b_state_of_charge", currentTime, 95 + 5 * dist(rng)));
@@ -108,63 +110,84 @@ char *getDataNow(long long time)
     cJSON_AddItemToArray(data, createDataNowJSONObj2("age_ags_0xA1", currentTime, intToString(9.0).c_str())); // Dummy value
 
     JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
     cJSON_Delete(JSONObj);
-    return JSONString;
+
+    ESP_LOGI(TAG_WEB, "After dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
+    return returnString;
 }
 
-char *getHostInfoJson()
+std::string getHostInfoJson()
 {
     char *JSONString = NULL;
+    std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *drives = NULL;
     cJSON *sd_card = NULL;
-    uint32_t tot, free;
-    bool ret;
-    if (!isMounted())
-        initi_sd_card();
-    if (isMounted())
-        ret = SD_getFreeSpace(&tot, &free);
-    else
-        tot = free = 0;
+    uint32_t tot, freeSpace;
+    tot = freeSpace = 0;
+    esp_err_t ret2 = ESP_OK;
 
-    ESP_LOGI("SD_CARD", "%i KiB total drive space. %i KiB available.", tot, free);
+    if (!isMounted())
+    {
+        ret2 = initi_sd_card();
+    }
+
+    // This function will unmount sd card if the sd card can't be found
+    if (ret2 == ESP_OK)
+        SD_getFreeSpace(&tot, &freeSpace);
+
     JSONObj = cJSON_CreateObject();
 
     cJSON_AddStringToObject(JSONObj, "hostname", "RAYCING");
+    cJSON_AddBoolToObject(JSONObj, "hasSDCard", isMounted());
     cJSON_AddItemToObject(JSONObj, "drives", drives = cJSON_CreateArray());
     cJSON_AddItemToArray(drives, sd_card = cJSON_CreateObject());
 
     // SD card info
     cJSON_AddNumberToObject(sd_card, "total", tot);
-    cJSON_AddNumberToObject(sd_card, "used", tot - free);
-    cJSON_AddNumberToObject(sd_card, "avail", free);
+    cJSON_AddNumberToObject(sd_card, "used", tot - freeSpace);
+    cJSON_AddNumberToObject(sd_card, "avail", freeSpace);
     cJSON_AddStringToObject(sd_card, "description", "SD_Card");
 
     JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
     cJSON_Delete(JSONObj);
-    return JSONString;
+
+    return returnString;
 }
 
-char *getHistoryFiles()
+std::string getHistoryFiles()
 {
-    cJSON *data = NULL;
+    ESP_LOGI(TAG_WEB, "Before getHistFile fucntion. Current free heap %zu", esp_get_free_heap_size());
+    cJSON *JSONObj = NULL;
     cJSON *history_files = NULL;
     cJSON *files = NULL;
     char *JSONString = NULL;
+    std::string returnString;
 
     std::vector<std::string> fileNames = getAllFileName();
 
-    data = cJSON_CreateObject();
-    cJSON_AddItemToObject(data, "history_files", history_files = cJSON_CreateObject());
+    JSONObj = cJSON_CreateObject();
+    cJSON_AddItemToObject(JSONObj, "history_files", history_files = cJSON_CreateObject());
     cJSON_AddItemToObject(history_files, "files", files = cJSON_CreateArray());
 
     for (auto &it : fileNames)
     {
         cJSON_AddItemToArray(files, cJSON_CreateString(it.c_str()));
     }
-    JSONString = cJSON_Print(data);
-    cJSON_Delete(data);
-    return JSONString;
+    JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
+    cJSON_Delete(JSONObj);
+
+    ESP_LOGI(TAG_WEB, "After dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
+    return returnString;
 }
 
 cJSON *createDayStatObj(historyObj temp)
@@ -177,9 +200,10 @@ cJSON *createDayStatObj(historyObj temp)
     return dataHolder;
 }
 
-char *getDaysStats()
+std::string getDaysStats()
 {
     char *JSONString = NULL;
+    std::string returnString;
     cJSON *JSONObj = NULL;
     cJSON *dayStats = NULL;
 
@@ -192,8 +216,68 @@ char *getDaysStats()
     }
 
     JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
     cJSON_Delete(JSONObj);
-    return JSONString;
+
+    ESP_LOGI(TAG_WEB, "After dataNow fucntion. Current free heap %zu", esp_get_free_heap_size());
+    return returnString;
+}
+
+cJSON *createRecentJSONObj(long long tempTime, float b_amp_in_out, float b_dc_watts, float b_state_of_charge)
+{
+    cJSON *JSON_Obj = NULL;
+    cJSON *data = NULL;
+
+    JSON_Obj = cJSON_CreateObject();
+    cJSON_AddNumberToObject(JSON_Obj, "time", tempTime);
+    cJSON_AddItemToObject(JSON_Obj, "data", data = cJSON_CreateObject());
+
+    cJSON_AddNumberToObject(data, "b_amph_in_out", b_amp_in_out);
+    cJSON_AddNumberToObject(data, "b_dc_watts", b_dc_watts);
+    cJSON_AddNumberToObject(data, "b_state_of_charge", b_state_of_charge);
+
+    return JSON_Obj;
+}
+
+/**
+ * This json string is used to kick start the plot on current Condition page.
+ */
+std::string getRecentData()
+{
+    if (histMap.empty())
+    {
+        ESP_LOGI(TAG_WEB, "Map is empty");
+        return "{\"recent\":[]}";
+    }
+
+    char *JSONString = NULL;
+    std::string returnString;
+    cJSON *JSONObj = NULL;
+    cJSON *recent = NULL;
+    long long tempTime = 10000;
+
+    JSONObj = cJSON_CreateObject();
+    cJSON_AddItemToObject(JSONObj, "recent", recent = cJSON_CreateArray());
+
+    for (int i = 0; i < histMap["b_dc_watts"].valueHolder.size(); i++)
+    {
+        cJSON_AddItemToArray(recent, createRecentJSONObj(tempTime,
+                                                         0, // We don't have b_amph_in_out since 24 hours data don't require it.
+                                                         histMap["b_dc_watts"].valueHolder[i],
+                                                         histMap["b_state_of_charge_clean"].valueHolder[i]));
+
+        tempTime += 10000;
+    }
+
+    JSONString = cJSON_Print(JSONObj);
+    returnString.append(JSONString);
+
+    free(JSONString);
+    cJSON_Delete(JSONObj);
+
+    return returnString;
 }
 
 /**

@@ -185,5 +185,5 @@ extern "C" void app_main(void)
 
     /* start Ethernet driver state machine */
     ESP_ERROR_CHECK(esp_eth_start(eth_handle));
-    startLogging();
+    starterFunction();
 }

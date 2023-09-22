@@ -1,6 +1,6 @@
 /**
- * 08/17/2023 - Ruizhe He, since 
-*/
+ * 08/17/2023 - Ruizhe He, since
+ */
 #pragma once
 
 #ifndef WEBSERVER_H
@@ -34,8 +34,11 @@
 #define ERR_INVALID_ARG "Null argument(s)"
 #define ERR_HTTP_ALLOC_MEM "Failed to allocate memory for instance"
 #define ERR_HTTP_TASK "Failed to launch server task"
+
+#define DOWNLOAD_URI "/download/"
+#define DELETE_URI "/delete/"
 // Max length for file name. Our file should have format of yyyyMMDD.csv
-#define FILE_PATH_MAX 20
+#define FILE_PATH_MAX 25
 
 /* Max size of an individual file. Make sure this
  * value is same as that set in upload_script.html */
@@ -49,15 +52,12 @@ const char *const TAG_WEB = "Web_Server";
 
 struct file_server_data
 {
-    /* Base path of file storage */
-    char base_path[FILE_PATH_MAX + 1];
-
     /* Scratch buffer for temporary storage during file transfer */
     char scratch[SCRATCH_BUFSIZE];
 };
 
 // NOTE: file_server.c
-const char *get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize);
+void get_path_from_uri(const char *uri, char *search, char *filepath, char *filename);
 
 struct file_server_data *initFileServer();
 
@@ -78,13 +78,15 @@ public:
     std::vector<float> valueHolder;
 };
 
-char *getDataNow(long long time);
+std::string getDataNow(long long time);
 
-char *getHostInfoJson();
+std::string getHostInfoJson();
 
-char *getHistoryFiles();
+std::string getHistoryFiles();
 
-char *getDaysStats();
+std::string getDaysStats();
+
+std::string getRecentData();
 
 void addToRecent(std::vector<float> liveData);
 

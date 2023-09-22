@@ -52,7 +52,7 @@
               <a href="/">Current Conditions</a>
             </li>
             <li>
-              <a href="currentSettings.html">Current Settings</a>
+              <a href="currentSettings">Current Settings</a>
             </li>
             <li>
               <a href="/historical">Historical Data</a>
@@ -96,6 +96,7 @@
       var isIE = msieversion();
       var channels;
       var curTime;
+      var hasSDCard = false;
 
       /* This script kindly provided by Microsoft */
       function msieversion() {
@@ -147,11 +148,31 @@
         xhr.send();
       }
 
+      /* If SD card is not mounted, hide the screen showing sd card memory and 24 hour data.*/
+      function hideMemTable() {
+        var memTable = document.getElementById("memTable");
+        var memMsg = document.getElementById("sdMsg");
+        var hourTable = document.getElementById("hourTable");
+
+        if (hasSDCard) {
+          memTable.style.display = "";
+          memMsg.style.display = "none";
+          hourTable.style.display = "";
+        } else {
+          memTable.style.display = "none";
+          memMsg.style.display = "";
+          hourTable.style.display = "none";
+        }
+      }
+
       //TODO: Check if dayKB is still correct
       function processHostInfo(dataS, create) {
         $("#headline").html(
           "PRO-Verter RMK (" + dataS.hostname + "): Current Conditions"
         );
+
+        hasSDCard = dataS.hasSDCard;
+        hideMemTable();
 
         var total = getMemory("SD_Card", "total", dataS.drives);
         var free = getMemory("SD_Card", "avail", dataS.drives);
@@ -190,30 +211,6 @@
         } else {
           $("#memoryData").hide();
         }
-        // USB is not used anymore.
-        // /* if USB is plugged in */
-        // if (-1 != getMemory("/media/usb0", "total", dataS.drives)) {
-        //   $(".usbRow").show();
-
-        //   /* safe to remove? */
-        //   var readOnly = getMemory("/media/usb0", "readOnly", dataS.drives);
-        //   if (!readOnly) {
-        //     $("#usbMsg").html(
-        //       "File copy in progess<br>DO NOT REMOVE<br>EXTERNAL STORAGE</span>"
-        //     );
-        //     $("#usbMsg").css("background-color", "red");
-        //     $("#usbMsg").css("color", "white");
-        //     MemUp();
-        //   } else {
-        //     $("#usbMsg").html(
-        //       "File copy is complete.<br>You may safely remove<br>external storage</span>"
-        //     );
-        //     $("#usbMsg").css("background-color", "green");
-        //     $("#usbMsg").css("color", "white");
-        //   }
-        // } else {
-        //   $(".usbRow").hide();
-        // }
 
         /* warning if low on space */
         if (daysLeft <= 30) {
@@ -311,8 +308,9 @@
           agsRows(dataAr, create);
 
           /* 24hour data */
-          //dailyStats(dataAr,create);
-          loadDayData(dataAr, create); //TODO: This is removed for now since we don't have 24 hours data
+          if (hasSDCard) {
+            loadDayData(dataAr, create);
+          }
 
           /* plot graphs */
           if (create && parseInt(dataAr["age_bmk"].sampleValue) < 100)
@@ -335,7 +333,7 @@
 
         /* There isn't any kind of age indication in these packets as of now, so we have to remember the last packet time and check against that */
 
-        if (lastTime != parseInt(dataAr[lastCh].time)) {
+        if (lastTime != dataAr[lastCh].time) {
           seconds = 0;
           lastTime = curTime;
           oldData = false;
@@ -344,14 +342,14 @@
           customFaults(null);
         }
 
-        lastTime = parseInt(dataAr[lastCh].time);
-        nowTimeStamp = parseInt(dataAr[lastCh].time);
+        lastTime = dataAr[lastCh].time;
+        nowTimeStamp = dataAr[lastCh].time;
 
         addLine(
           "currentTable",
           "Data Date (UTC):",
           '<span id="convDate">' +
-            getUTCTime(parseInt(dataAr[lastCh].time)) +
+            getUTCTime(dataAr[lastCh].time) +
             '</span><br>Report received <span id="ageRep">' +
             commaSeparateNumber(seconds) +
             "</span> seconds ago",
@@ -487,7 +485,7 @@
           addCat(
             "currentTable",
             "Data Supplied By Inverter (" +
-              inverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
+              magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
               ")",
             create
           );
@@ -496,7 +494,7 @@
           addLine(
             "currentTable",
             "Status:",
-            inverterStatus(parseInt(dataAr["i_status"].sampleValue)),
+            magnumInverterStatus(parseInt(dataAr["i_status"].sampleValue)),
             "iStatus",
             create
           );
@@ -530,7 +528,7 @@
           if (
             (null == dataAr["length_inverter"] ||
               parseInt(dataAr["length_inverter"].sampleValue) >= 20) &&
-            inverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
+            magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
           ) {
             displayMeters = true;
           }
@@ -544,7 +542,8 @@
             exportMeters = true;
 
             if (
-              1 == inverterModel(parseInt(dataAr["i_model"].sampleValue), 3)
+              1 ==
+              magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 3)
             ) {
               vacScale = 2.0;
             }
@@ -592,7 +591,8 @@
                 create
               );
               if (
-                1 == inverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
+                1 ==
+                magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
               ) {
                 s =
                   "Approximately " +
@@ -646,7 +646,8 @@
             /* AC in */
             if (
               dataAr["i_ac_volts_in"].avg >= 80 &&
-              1 == inverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
+              1 ==
+                magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 4)
             ) {
               s =
                 "Approximately " +
@@ -734,7 +735,7 @@
           addLine(
             "currentTable",
             "Status:",
-            AGSStatus(parseInt(dataAr["a_status"].sampleValue)),
+            magnumAGSStatus(parseInt(dataAr["a_status"].sampleValue)),
             "ags_status",
             create
           );
@@ -943,20 +944,7 @@
             data.amp_in_out.shift();
           }
         }
-        // if (data.calc.length != 0) {
-        //   if (
-        //     null != dataAr["calc_add_power"].avg &&
-        //     dataAr["calc_add_power"].time != data.calc[data.calc.length - 1][0]
-        //   ) {
-        //     data.calc.push([
-        //       dataAr["calc_add_power"].time,
-        //       dataAr["calc_add_power"].avg,
-        //     ]);
-        //   }
-        //   while (data.calc[0][0] < dayAgo) {
-        //     data.calc.shift();
-        //   }
-        // }
+
         /* if array has more than 24 hours of data, shift data out */
 
         var dayAgo = new Date().getTime() - 1000 * 60 * 60 * 24;
@@ -1059,7 +1047,7 @@
           addHourCat(
             "hourTable",
             "Data Supplied By Inverter (" +
-              inverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
+              magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 0) +
               ")",
             create
           );
@@ -1086,7 +1074,7 @@
           if (
             (null == dataAr["length_inverter"] ||
               parseInt(dataAr["length_inverter"].sampleValue) >= 20) &&
-            inverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
+            magnumInverterModel(parseInt(dataAr["i_model"].sampleValue), 3) != 1
           ) {
             displayMeters = true;
           }
@@ -1181,7 +1169,7 @@
           }
           updateHourRowTempAGS(
             "hourTable",
-            "a_temperature_clean",
+            "a_temperature",
             "AGS Temperature:",
             dayData.dayStats,
             create
@@ -1645,50 +1633,6 @@
             }
           );
         }
-        // if (0 != data.calc.length) {
-        //   dataArray = data.calc;
-        //   dataArray = tenMinuteAverages(dataArray);
-        //   for (var i = 0; i < dataArray.length; i++) {
-        //     calcArray[i] = [i, dataArray[i]];
-        //   }
-        //   while (calcArray.length <= 144) {
-        //     calcArray.push([-calcArray.length, 0]);
-        //   }
-
-        /* plot the flot chart */
-        /*$.plot("#calcChart", [{
-      				data: calcArray,
-      				bars: {
-      					show: true,
-      					lineWidth:0,
-      					barWidth: .5,
-      					align: "left",
-      					fill: 1
-      				},
-      				color: '#000000',
-      				threshold: [{
-      					below: 0,
-      					color: '#f04040'
-      				}, {
-      					below: 0,
-      					color: '#f7a11a'
-      				}]
-      			}], {
-      				grid: {
-      					borderWidth: 0,
-      					hoverable: true,
-      					autoHighlight: false
-      				},
-      				xaxis: {
-      					tickLength: 0,
-      					ticks:0
-      				},
-      				yaxis: {
-      					tickLength: 0,
-      					ticks: 3
-      				}
-      		});*/
-        // }
       }
 
       /* find the ten minute averages for flot charts */
@@ -1760,7 +1704,10 @@
           loadData(false);
         }
 
-        loadHeadline(false);
+        //Grab host info every 3 seconds.
+        if (seconds % 3 == 0) {
+          loadHeadline(false);
+        }
 
         setTimeout(timerTick, 1000);
       }
@@ -1937,6 +1884,14 @@
         <h3 style="color: #ffffff; padding-bottom: 10px">
           Memory<br /><span style="font-size: 0.75em">click to show/hide</span>
         </h3>
+
+        <br />
+        <h3
+          id="sdMsg"
+          style="color: #ffffff; padding-bottom: 10px; display: none"
+        >
+          SD card is not inserted. Please reinsert the SD card.
+        </h3>
       </div>
 
       <table id="memTable">
@@ -1978,18 +1933,18 @@
     </div>
     <span id="preloadedImages"></span>
 
-      <br />
-      <br />
-      <div style="text-align: center; padding-bottom: 50px">
-        <h5 style="color: #666">
-          &copy; 2023. All rights reserved.<br /><br />
-          <em
-            >Powered by
-            <a target="_blank" href="https://www.solarstik.com/"
-              >Solar Stik, Inc.</a
-            >
-          </em>
-        </h5>
-      </div>
-    </body>
-  </html>
+    <br />
+    <br />
+    <div style="text-align: center; padding-bottom: 50px">
+      <h5 style="color: #666">
+        &copy; 2023. All rights reserved.<br /><br />
+        <em
+          >Powered by
+          <a target="_blank" href="https://www.solarstik.com/"
+            >Solar Stik, Inc.</a
+          >
+        </em>
+      </h5>
+    </div>
+  </body>
+</html>
